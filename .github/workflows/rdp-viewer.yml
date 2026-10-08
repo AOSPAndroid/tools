@@ -1,0 +1,37 @@
+name: Build RDP Viewer
+on:
+  push:
+    branches: [main]
+    paths: ['RDP-Viewer/**', '.github/workflows/rdp-viewer.yml']
+  pull_request:
+    paths: ['RDP-Viewer/**', '.github/workflows/rdp-viewer.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-build:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, pinned
+        with:
+          persist-credentials: false
+      - name: Build, run offline tests, and verify ActiveX setup without connecting
+        shell: powershell
+        run: .\RDP-Viewer\build.ps1 -RunTests -SmokeTest
+      - name: Upload Windows package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, pinned
+        with:
+          name: RDP-Viewer-win-x64
+          path: RDP-Viewer/artifacts/RDP-Viewer-win-x64/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload offline test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, pinned
+        with:
+          name: RDP-Viewer-test-reports
+          path: RDP-Viewer/artifacts/reports/
+          if-no-files-found: warn
+          retention-days: 14
